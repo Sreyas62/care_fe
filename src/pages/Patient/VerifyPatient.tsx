@@ -43,12 +43,13 @@ export default function VerifyPatient() {
   const { hasPermission } = usePermissions();
   const isTab = useBreakpoints({ default: true, lg: false });
 
-  const { canWriteAppointment, canCreateEncounter, canListEncounters } =
-    getPermissions(hasPermission, facility?.permissions ?? []);
-
-  // For now, using canWriteAppointment as a proxy for token creation permission
-  // This can be updated when specific token permissions are available
-  const canCreateToken = canWriteAppointment;
+  const {
+    canWriteAppointment,
+    canCreateEncounter,
+    canListEncounters,
+    canWriteToken,
+    canListTokens,
+  } = getPermissions(hasPermission, facility?.permissions ?? []);
 
   const {
     data: patientData,
@@ -114,7 +115,6 @@ export default function VerifyPatient() {
                         icon={<SquareActivity className="text-orange-500" />}
                         title={t("create_encounter")}
                         actionId="create-encounter"
-                        data-shortcut-id="create-encounter"
                       />
                     }
                   />
@@ -129,13 +129,12 @@ export default function VerifyPatient() {
                         icon={<Stethoscope className="text-purple-500" />}
                         title={t("schedule_appointment")}
                         actionId="schedule-appointment"
-                        data-shortcut-id="schedule-appointment"
                       />
                     }
                   />
                 )}
 
-                {canCreateToken && (
+                {canWriteToken && (
                   <CreateTokenForm
                     patient={patientData}
                     facilityId={facilityId}
@@ -144,7 +143,6 @@ export default function VerifyPatient() {
                         icon={<Ticket className="text-gray-500" />}
                         title={t("generate_token")}
                         actionId="generate-token"
-                        data-shortcut-id="generate-token"
                       />
                     }
                   />
@@ -157,12 +155,12 @@ export default function VerifyPatient() {
                 facilityPermissions={facility?.permissions ?? []}
                 canListEncounters={canListEncounters}
                 canWriteAppointment={canWriteAppointment}
-                canCreateToken={canCreateToken}
+                canListTokens={canListTokens}
               />
             </div>
 
             <div className="space-y-4">
-              {canCreateToken && !isTab && (
+              {canListTokens && !isTab && (
                 <PatientTokensList
                   patientId={patientData.id}
                   facility={facility}

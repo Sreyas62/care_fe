@@ -217,6 +217,7 @@ export const PatientRegistration = ({ patientId }: { patientId?: string }) => {
   );
 
   const { mutate: createPatient, isPending: isCreatingPatient } = useMutation({
+    mutationKey: ["create_patient"],
     mutationFn: mutate(patientApi.addPatient),
     onSuccess: (resp: PatientRead) => {
       toast.success(t("patient_registration_success"));
@@ -232,6 +233,7 @@ export const PatientRegistration = ({ patientId }: { patientId?: string }) => {
   });
 
   const { mutate: updatePatient, isPending: isUpdatingPatient } = useMutation({
+    mutationKey: ["update_patient"],
     mutationFn: mutate(patientApi.updatePatient, {
       pathParams: { id: patientId || "" },
     }),
@@ -383,15 +385,11 @@ export const PatientRegistration = ({ patientId }: { patientId?: string }) => {
               <div className="max-w-2xl mx-auto flex justify-end">
                 <Button
                   variant="primary_gradient"
-                  data-shortcut-id="submit-action"
                   // TODO: disable button if basic info not fille
                 >
                   <CheckIcon />
                   {patientId ? t("update") : t("register_patient")}
-                  <ShortcutBadge
-                    actionId="submit-action"
-                    className="bg-gray-200"
-                  />
+                  <ShortcutBadge actionId="submit-action" />
                 </Button>
               </div>
             </div>
@@ -448,6 +446,7 @@ const PatientBasicsContent = ({
                 tabIndex={0}
                 placeholder={t("type_name")}
                 {...field}
+                value={field.value ?? ""}
               />
             </FormControl>
             <FormMessage />
@@ -530,7 +529,7 @@ const PatientBasicsContent = ({
               <RadioInput
                 {...field}
                 onValueChange={field.onChange}
-                value={field.value ?? undefined}
+                value={field.value ?? ""}
                 options={GENDER_TYPES.map((g) => ({
                   value: g.id,
                   label: t(`GENDER__${g.id}`),
@@ -552,7 +551,7 @@ const PatientBasicsContent = ({
               <FormLabel aria-required>{t("date_of_birth_or_age")}</FormLabel>
               <div className="flex gap-1 items-start">
                 <Tabs value={field.value} onValueChange={field.onChange}>
-                  <TabsList className="mt-0.25">
+                  <TabsList className="mt-1 md:mt-0.25">
                     <TabsTrigger value="dob">{t("date")}</TabsTrigger>
                     <TabsTrigger value="age">{t("age")}</TabsTrigger>
                   </TabsList>
@@ -584,23 +583,33 @@ const PatientBasicsContent = ({
                     control={form.control}
                     name="age"
                     render={({ field }) => (
-                      <FormItem className="w-full md:col-span-2">
+                      <FormItem className="w-full md:col-span-2 relative">
                         <FormControl>
-                          <Input
-                            {...field}
-                            type="number"
-                            inputMode="numeric"
-                            pattern="[0-9]*"
-                            placeholder={t("age")}
-                            min={1}
-                            max={120}
-                            value={field.value ?? ""}
-                            onChange={(e) => {
-                              field.onChange(
-                                e.target.value ? Number(e.target.value) : null,
-                              );
-                            }}
-                          />
+                          <>
+                            <Input
+                              {...field}
+                              type="number"
+                              inputMode="numeric"
+                              pattern="[0-9]*"
+                              placeholder={t("age")}
+                              min={1}
+                              max={120}
+                              value={field.value ?? ""}
+                              onChange={(e) => {
+                                field.onChange(
+                                  e.target.value
+                                    ? Number(e.target.value)
+                                    : null,
+                                );
+                              }}
+                            />
+                            {field.value && (
+                              <span className="text-xs text-gray-500 absolute right-9 top-3.25 md:top-2.5">
+                                {t("year_of_birth")}:{" "}
+                                {new Date().getFullYear() - Number(field.value)}
+                              </span>
+                            )}
+                          </>
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -620,6 +629,7 @@ const PatientBasicsContent = ({
               <FormLabel>{t("blood_group")}</FormLabel>
               <Select
                 {...field}
+                value={field.value ?? ""}
                 onValueChange={field.onChange}
                 defaultValue={field.value}
               >
@@ -653,7 +663,11 @@ const PatientBasicsContent = ({
                 <FormLabel aria-required>{config.display}</FormLabel>
                 <FormDescription>{config.description}</FormDescription>
                 <FormControl>
-                  <Input {...field} placeholder={t("enter_identifier_value")} />
+                  <Input
+                    {...field}
+                    value={field.value ?? ""}
+                    placeholder={t("enter_identifier_value")}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -782,6 +796,7 @@ const AdditionalDetailsContent = ({
             <FormControl>
               <Input
                 {...field}
+                value={field.value ?? ""}
                 placeholder={t("enter_pincode")}
                 onChange={(e) => {
                   const value = e.target.value
@@ -832,7 +847,11 @@ const AdditionalDetailsContent = ({
                 <FormLabel>{config.display}</FormLabel>
                 <FormDescription>{config.description}</FormDescription>
                 <FormControl>
-                  <Input {...field} placeholder={t("enter_identifier_value")} />
+                  <Input
+                    {...field}
+                    value={field.value ?? ""}
+                    placeholder={t("enter_identifier_value")}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -845,9 +864,8 @@ const AdditionalDetailsContent = ({
           <p className="text-sm font-medium text-black">
             {t("deceased_status")}
           </p>
-          <div className="flex items-start gap-2">
+          <div className="flex items-center gap-2">
             <Checkbox
-              className="mt-2"
               checked={form.watch("is_deceased")}
               onCheckedChange={(checked) => {
                 form.setValue("is_deceased", !!checked);
@@ -917,6 +935,9 @@ const AdditionalDetailsContent = ({
 const getRequiredIdentifierConfigs = (facility: FacilityRead) => {
   const configs = facility.patient_instance_identifier_configs;
   return configs.filter(({ config }) => {
+    if (config.auto_maintained) {
+      return false;
+    }
     const isAutogenerated = !!config.default_value;
     const isRequired = config.required && !isAutogenerated;
     return isRequired;
@@ -926,6 +947,9 @@ const getRequiredIdentifierConfigs = (facility: FacilityRead) => {
 const getOptionalIdentifierConfigs = (facility: FacilityRead) => {
   const configs = facility.patient_instance_identifier_configs;
   return configs.filter(({ config }) => {
+    if (config.auto_maintained) {
+      return false;
+    }
     const isAutogenerated = !!config.default_value;
     const isOptional = !config.required && !isAutogenerated;
     return isOptional;
@@ -935,6 +959,9 @@ const getOptionalIdentifierConfigs = (facility: FacilityRead) => {
 const getAutogeneratedIdentifierConfigs = (facility: FacilityRead) => {
   const configs = facility.patient_instance_identifier_configs;
   return configs.filter(({ config }) => {
+    if (config.auto_maintained) {
+      return false;
+    }
     const isAutogenerated = !!config.default_value;
     return isAutogenerated;
   });
@@ -1057,6 +1084,11 @@ const getEditableIdentifiers = (
     const config = facility.patient_instance_identifier_configs.find(
       (c) => c.id === identifier.config,
     );
+
+    if (config?.config.auto_maintained) {
+      return false;
+    }
+
     return !config?.config.default_value;
   }) as PatientIdentifierCreate[];
 };

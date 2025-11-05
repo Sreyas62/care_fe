@@ -1,5 +1,5 @@
 import careConfig from "@careConfig";
-import { Redirect, usePath, useRedirect, useRoutes } from "raviger";
+import { usePath, useRedirect, useRoutes } from "raviger";
 
 import IconIndex from "@/CAREUI/icons/Index";
 
@@ -28,14 +28,13 @@ import { ShortcutCommandDialog } from "@/components/Facility/ShortcutCommandDial
 import { Button } from "@/components/ui/button";
 import { PermissionProvider } from "@/context/PermissionContext";
 import { useShortcuts } from "@/context/ShortcutContext";
-import { PlugConfigEdit } from "@/pages/Apps/PlugConfigEdit";
-import { PlugConfigList } from "@/pages/Apps/PlugConfigList";
 import UserDashboard from "@/pages/UserDashboard";
 
 // List of paths and patterns where the sidebar should be hidden
 const PATHS_WITHOUT_SIDEBAR = [
   // Exact matches
   "/",
+  "/login",
   "/session-expired",
   // Pattern matches (using regex)
   /^\/facility\/[^/]+\/services_requests\/[^/]+$/,
@@ -81,10 +80,6 @@ const Routes: AppRoutes = {
 
   // Only include the icon route in development environment
   ...(import.meta.env.PROD ? { "/icons": () => <IconIndex /> } : {}),
-
-  "/apps": () => <PlugConfigList />,
-  "/apps/plug-configs/:slug": ({ slug }) => <PlugConfigEdit slug={slug} />,
-  "/login": () => <Redirect to="/" />,
 };
 
 const AdminRouter: AppRoutes = {

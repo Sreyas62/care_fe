@@ -58,9 +58,6 @@ function OrganizationCard({
       });
       toast.success(t("organization_deleted_successfully"));
     },
-    onError: () => {
-      toast.error(t("something_went_wrong"));
-    },
   });
 
   const canDelete = parentId ? true : !org.has_children;
@@ -175,7 +172,7 @@ export default function AdminOrganizationView({ id, organizationType }: Props) {
               />
             </div>
           </div>
-          <div className="w-auto">
+          <div className="w-full md:w-auto">
             {
               <FacilityOrganizationFormSheet
                 organizationType={organizationType}
